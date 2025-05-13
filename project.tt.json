@@ -1,0 +1,9 @@
+{
+  "miniprogramRoot": "./",
+  "projectname": "order-food-cli",
+  "appid": "touristappid",
+  "setting": {
+    "es6": false,
+    "minified": false
+  }
+}
