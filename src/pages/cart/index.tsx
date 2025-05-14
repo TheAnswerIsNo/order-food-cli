@@ -21,14 +21,30 @@ export default function Index() {
   const [totalNumber, setTotalNumber] = useState(0)
   const [controlledGroup, setControlledGroup] = useState<Array<any>>([])
   const [disabled, setDisabled] = useState(true)
+  const [checkList, setCheckList] = useState<Map<string, string>>(new Map<string, string>([]));
 
   const selectAll = () => {
-
+    if (controlledGroup.length === list.length) {
+      setSelected(false)
+      setCheckList(new Map<string, string>([]));
+      setControlledGroup([])
+      getTotalNumber([])
+      return
+    }
+    let idList: Array<string> = []
+    const checkedList = new Map<string, string>()
+    list.map((item) => {
+      idList.push(item.id)
+      checkedList.set(item.id, item.id)
+    })
+    setControlledGroup(idList)
+    setCheckList(checkedList);
+    setSelected(true)
+    getTotalNumber(idList)
   }
 
   const getCartList = async () => {
     const res = await getCartAPI()
-    // Taro.showToast({ title: res.data, icon: 'success', duration: 1000 })
     if (res.code === 200) {
       setList(res.data)
     }
@@ -39,21 +55,37 @@ export default function Index() {
   })
 
   const getTotalNumber = (val: Array<any>) => {
+
     const sum = list.reduce((prev, item) => {
       if (val.includes(item.id)) {
         return prev + item.price * item.number
       }
       return prev
     }, 0)
+
     sum == 0 ? setDisabled(true) : setDisabled(false)
     setTotalNumber(sum)
   }
 
-  const onChange = (value: Array<string>) => {
-    setControlledGroup(value)
-    // getTotalNumber(value)
-    if (value.length === list.length) setSelected(true)
-    if (value.length === 0) setSelected(false)
+  const onChange = (id: string) => {
+    let temp = []
+    const newCheckList = new Map(checkList);
+
+    const index = controlledGroup.findIndex(item => item === id)
+    if (index !== -1) {
+      temp = controlledGroup.filter(item => item !== id)
+      setControlledGroup(temp)
+      newCheckList.delete(id);
+      setCheckList(newCheckList);
+    } else {
+      temp = [...controlledGroup, id]
+      setControlledGroup(temp)
+      newCheckList.set(id, id);
+      setCheckList(newCheckList);
+    }
+    getTotalNumber(temp)
+    if (temp.length === list.length) setSelected(true)
+    else setSelected(false)
   }
 
   const openDeteleDialog = (id: string) => {
@@ -89,60 +121,70 @@ export default function Index() {
       const newList = [...list]
       newList[index].number = number
       setList(newList)
-      // getTotalNumber(controlledGroup)
+      getTotalNumber(controlledGroup)
     }
   }
 
   return (
-    <Blank style={{ paddingTop: 20 }}>
-      <Space head>
-        {list.length === 0 ? (
-          <Empty />
-        ) : (
-          <Checkbox.Group
-            style={{ marginTop: 100 }}
-            multiple
-            value={controlledGroup}
-            onChange={(value) => onChange(value)}
-            options={list.map((val) => {
-              return {
-                value: val.id,
-                label: <Space head>
-                  <Card
-                    title={val.name}
-                    extra={<Button type="primary" text="删除" danger onPress={() => openDeteleDialog(val.id)} />}
-                  >
-                    <Row style={{ justifyContent: 'space-between', paddingHorizontal: 16 }}>
-                      <Text style={{ color: 'red', fontSize: 20, marginRight: 16 }}>￥{val.price}</Text>
-                      <NumberInput type='digit'
-                        style={{ color: 'red', fontSize: 20, marginRight: 16 }}
-                        defaultValue={val.number}
-                        value={val.number}
-                        prefix={<Text>数量: </Text>}
-                        onBlur={() => {
-                          updateCart(val)
-                        }}
-                        onChange={(number) => { updateNumber(number, val) }}
+    <>
+      <Blank style={{ paddingTop: 20 }}>
+        <Space head >
+          {list.length === 0 ? (
+            <Empty />
+          ) : (
+            <View style={{ height: '100%' }}>
+              <View style={{ flex: 1, padding: 10 }}>
+                {
+                  list.map((val, index) => {
+                    return <View key={index} style={{ flexDirection: 'row', marginTop: 10 }} onClick={() => { onChange(val.id) }}>
+                      <Checkbox
+                        value={checkList.get(val.id)}
+                        inactiveValue={false}
+                        activeValue={val.id}
                       >
-                      </NumberInput>
-                    </Row>
-                  </Card>
-                </Space> as any
-              }
-            })}
-          >
-          </Checkbox.Group>
-        )}
-        <View style={{ width: '100%', background: '#f7f8f8', position: 'fixed', bottom: '0', height: '60px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Row style={{ width: '100%', justifyContent: 'space-between', paddingHorizontal: 16 }}>
-            <Button type="primary" text={selected ? '取消全选' : '全选'} onPress={selectAll} />
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={{ marginRight: 16 }}>合计: ￥{totalNumber}</Text>
-              <Button disabled={disabled} type="primary" text="去结算" danger />
-            </View>
-          </Row>
-        </View>
-      </Space>
-    </Blank >
+                      </Checkbox>
+                      <Card
+                        title={val.name}
+                        style={{ marginLeft: 10, flex: 1 }}
+                        extra={<Button type="primary" text="删除" danger onPress={() => openDeteleDialog(val.id)} />}
+                      >
+                        <View style={{ justifyContent: 'space-between', flexDirection: 'row', width: 150 }}>
+                          <Text style={{ color: 'red', fontSize: 20, marginRight: 16 }}>￥{val.price}</Text>
+                          <NumberInput type='digit'
+                            style={{ color: 'red', fontSize: 20, marginRight: 16 }}
+                            defaultValue={val.number}
+                            value={val.number}
+                            prefix={<Text>数量: </Text>}
+                            onBlur={() => {
+                              updateCart(val)
+                            }}
+                            onChange={(number) => { updateNumber(number, val) }}
+                          >
+                          </NumberInput>
+                        </View>
+                      </Card>
+                    </View>
+                  })
+                }
+              </View>
+
+              <View style={{ width: '100%', background: '#f7f8f8', position: 'fixed', bottom: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 10 }}>
+                <Row style={{ width: '100%', justifyContent: 'space-between', paddingHorizontal: 16 }}>
+                  <Button type="primary" text={selected ? '取消全选' : '全选'} onPress={selectAll} />
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Text style={{ marginRight: 16 }}>合计: ￥{totalNumber}</Text>
+                    <Button disabled={disabled} type="primary" text="去结算" danger />
+                  </View>
+                </Row>
+              </View>
+            </View >
+          )
+          }
+
+        </Space >
+
+      </Blank >
+
+    </>
   )
-} 5  
+} 

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Text } from '@tarojs/components'
+import { Image, Text, View } from '@tarojs/components'
 import { Blank, Button, Card, Space, Tabs, Toast } from '@fruits-chain/react-native-xiaoshu'
 import { addToCartAPI } from '../../services/cart';
 import Taro, { useDidShow } from '@tarojs/taro';
@@ -52,25 +52,32 @@ export default function Index() {
   }
 
   useDidShow(() => {
-    getDictList()
-    getGoodsList()
+    // getDictList()
+    // getGoodsList()
   })
 
   return (
     <Blank top>
       <Space head>
-        <Tabs divider={true}>
+        <Tabs>
           {dictLists.map((val) => {
             return <Tabs.TabPane key={val.id} tab={`第${val.id}个`}>
               <Space head>
                 {list.get(val.id)?.map(item => (
                   <Card square>
-                    {/* <Image src={item.photos[0]}></Image> */}
-                    <Text>{item.name}</Text>
-                    <Text style={{ color: 'red', fontSize: 20 }}>￥{item.price}</Text>
-                    <Button style={{ width: 50, marginTop: 20 }} textStyle={{ fontSize: 25 }} text='+' danger
-                      onPress={() => addCart(item)}>
-                    </Button>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <Image style={{ borderRadius: 20 }} src={'https://tse3.mm.bing.net/th/id/OIP.BTnQOgzj11V54KJ6VR31sgHaE7?cb=iwp2&rs=1&pid=ImgDetMain'}></Image>
+                      <View >
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontSize: 20 }}>{item.name}</Text>
+                          <Text >￥<Text style={{ color: 'red', fontSize: 30 }}>{item.price}</Text></Text >
+
+                        </View>
+                        <Button style={{ width: 50, marginTop: 20 }} textStyle={{ fontSize: 25 }} text='+' danger
+                          onPress={() => addCart(item)}>
+                        </Button>
+                      </View>
+                    </View>
                   </Card>
                 ))}
               </Space>
