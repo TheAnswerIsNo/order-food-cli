@@ -14,6 +14,8 @@ import {
 import { addToCartAPI, deleteCartAPI, getCartAPI } from "../../services/cart"
 import { useDidShow } from "@tarojs/taro"
 import Taro from "@tarojs/taro"
+import { groupCollapsed } from "console"
+import { submitAPI } from "../../services/order"
 
 export default function Index() {
   const [selected, setSelected] = useState(false)
@@ -89,14 +91,7 @@ export default function Index() {
   }
 
   const openDeteleDialog = (id: string) => {
-    Dialog.confirm({
-      title: '提示',
-      message: '确定要删除吗？',
-    }).then((action) => {
-      if (action === 'confirm') {
-        deleteCart(id)
-      }
-    })
+    deleteCart(id)
   }
 
   const deleteCart = async (id: string) => {
@@ -122,6 +117,38 @@ export default function Index() {
       newList[index].number = number
       setList(newList)
       getTotalNumber(controlledGroup)
+    }
+  }
+
+  const submitOrder = async () => {
+    // 封装提交订单接口
+    // 从list中获取选中的商品信息
+    const orderSubmitDetailList = new Array<any>()
+    list.map((item) => {
+      controlledGroup.map((id) => {
+        if (item.id === id) {
+          orderSubmitDetailList.push({
+            name: item.name,
+            number: item.number,
+            price: item.price,
+            goodsId: item.goodsId,
+          })
+        }
+      })
+    })
+    const { data } = await Taro.getStorage({ key: 'dine' })
+    const values = {
+      cartIds: controlledGroup,
+      orderSubmitDetailList: orderSubmitDetailList,
+      dine: data
+    }
+    const res = await submitAPI(values)
+    if (res.code === 200) {
+      getCartList()
+      const params = encodeURIComponent(JSON.stringify(res.data));
+      Taro.navigateTo({
+        url: `pages/submit/index?params=${params}`,
+      })
     }
   }
 
@@ -173,14 +200,13 @@ export default function Index() {
                   <Button type="primary" text={selected ? '取消全选' : '全选'} onPress={selectAll} />
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <Text style={{ marginRight: 16 }}>合计: ￥{totalNumber}</Text>
-                    <Button disabled={disabled} type="primary" text="去结算" danger />
+                    <Button disabled={disabled} type="primary" text="去结算" danger onPress={submitOrder} />
                   </View>
                 </Row>
               </View>
             </View >
           )
           }
-
         </Space >
 
       </Blank >
